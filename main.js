@@ -5,7 +5,7 @@ const JsBarcode = require('jsbarcode');
 const MAX_CHROME_PAGES = 2;
 let PREFIX = ">";
 let CHROME_PAGES = 0;
-const token = "MzY4NDIyNTU3ODgxMzM1ODEw.WeDePg.MTW2HskE7QPR-SrPQeKVmV38jSQ";
+const token = "MzY4NDIyNTU3ODgxMzM1ODEw.WeDePg.263kHD8VH8zxpc2EAl-88bNtRhI";
 
 const client = new Discord.Client({ intents: ["GUILD_MESSAGES", "GUILDS", "DIRECT_MESSAGES", "GUILD_MESSAGE_REACTIONS", "DIRECT_MESSAGE_REACTIONS"] });
 
