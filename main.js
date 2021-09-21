@@ -24,7 +24,7 @@ const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
 process.setMaxListeners(100);
 
 async function genPetrolCode() {
-  const browser = await Puppeteer.launch({ headless: true }); // linux: executablePath: "/usr/bin/chromium"
+  const browser = await Puppeteer.launch({ headless: true, executablePath: "/usr/bin/chromium" }); // linux: executablePath: "/usr/bin/chromium"
 
   const page = await browser.newPage();
   page.setDefaultTimeout(300000);
@@ -114,13 +114,13 @@ client.on("messageCreate", async message => {
 // HELP
 client.on("messageCreate", async message => {
   if (String(message.content).startsWith(GUILDS_DATA[message.guild.id].prefix + 'help')) {
-
-    let helpText = "commands: \n \
-    \t-help \n \
-    \t-hackPetrol [num]\n \
-    \t-barcode [code]\n \
-    \t-setPrefix [prefix]\n \
-    \t-setNickname [nickname]"
+    let pref = GUILDS_DATA[message.guild.id].prefix;
+    let helpText = `commands: \n \
+    \t${pref}help \n \
+    \t${pref}hackPetrol [num]\n \
+    \t${pref}barcode [code]\n \
+    \t${pref}setPrefix [prefix]\n \
+    \t${pref}setNickname [nickname]`
 
     message.channel.send(helpText);
   }
