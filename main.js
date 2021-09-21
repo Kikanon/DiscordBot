@@ -5,10 +5,10 @@ const JsBarcode = require('jsbarcode');
 const Fs = require('fs');
 const Os = require('os');
 
-
 const MAX_CHROME_PAGES = 2;
 const DEAFULT_NICKNAME = '';
 const DEAFULT_GUILD_DATA = {prefix:'>', nickname:'mr. bot', guild_name:''};
+const DEBUG = true;
 
 
 let CHROME_PAGES = 0;
@@ -25,7 +25,7 @@ const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
 process.setMaxListeners(100);
 
 async function genPetrolCode() {
-  const browser = await Puppeteer.launch({ headless: true, executablePath: "/usr/bin/chromium" }); // linux: executablePath: "/usr/bin/chromium"
+  const browser = (Os.type=="Linux")?await Puppeteer.launch({ headless: true, executablePath: "/usr/bin/chromium" }):await Puppeteer.launch({ headless: true });
 
   const page = await browser.newPage();
   page.setDefaultTimeout(300000);
@@ -60,10 +60,10 @@ async function saveConfig() {
   Fs.writeFileSync('guilds_data.json', data);
 }
 
-//-------------------- BOT READY --------------------
+//-------------------- BOT READY AND GUILD JOINS AND LEAVES--------------------
 client.on('ready', async () => {
-  console.log('Bot ready');
   console.log(`Running on ${Os.type}`);
+  console.log(`Debug: ${DEBUG}`);
 
   try {
     let rawdata = Fs.readFileSync('guilds_data.json');
@@ -106,109 +106,139 @@ client.on("guildDelete", async guild => {
   await saveConfig();
 });
 
-//-------------------- BOT FUNCTIONS --------------------
+// ------------------------ MESSAGE HANDLER --------------------------------
 client.on("messageCreate", async message => {
-  if (false && message.author != client.user) {
-    message.channel.send(message);
+  if(DEBUG && message.guild.name!="LawnMower2") return;
+  if(message.author.bot) return;
+  if(!message.member.permissions.has('ADMINISTRATOR')) return;
+  if(!message.content.startsWith(GUILDS_DATA[message.guild.id].prefix)) return;
+
+  let spaceIndex = message.content.indexOf(' ');
+  let data = message.content.slice(spaceIndex).trim();
+
+  if(spaceIndex == -1){
+    spaceIndex = undefined;
+    data = '';
   }
+
+  switch(message.content.slice(GUILDS_DATA[message.guild.id].prefix.length, spaceIndex)){
+    case "help": await help(message); break;
+    case "hackPetrol": await hackPetrol(message, data); break;
+    case "barcode": await barcode(message, data); break;
+    case "setPrefix": await setPrefix(message, data); break;
+    case "setNickname": await setNickname(message, data); break;
+    case "purge": await purge(message, data); break;
+    default: return;
+  }
+
 });
 
-// HELP
-client.on("messageCreate", async message => {
-  if (String(message.content).startsWith(GUILDS_DATA[message.guild.id].prefix + 'help')) {
+//-------------------- BOT FUNCTIONS --------------------
+
+async function help(message){
     let pref = GUILDS_DATA[message.guild.id].prefix;
     let helpText = `commands: \n \
     \t${pref}help \n \
     \t${pref}hackPetrol [num]\n \
     \t${pref}barcode [code]\n \
     \t${pref}setPrefix [prefix]\n \
-    \t${pref}setNickname [nickname]`
+    \t${pref}setNickname [nickname]\n \
+    \t${pref}purge [num] {can also reply to provide purge point}`
 
     message.channel.send(helpText);
+}
+
+async function setPrefix(message, data){
+  if (data == '') return;
+
+  message.channel.send(`got data ${data}`);
+  message.guild.me.setNickname( GUILDS_DATA[message.guild.id].nickname + ` [${data}]`);
+
+  GUILDS_DATA[message.guild.id].prefix = data;
+
+  message.channel.send(`New prefix is now \'${data}\'`);
+
+  await saveConfig();
+}
+
+async function setNickname(message, data){
+  if(data == '') return;
+
+  message.guild.me.setNickname( data + ` [${GUILDS_DATA[message.guild.id].prefix}]`);
+
+  GUILDS_DATA[message.guild.id].nickname = data;
+
+  message.channel.send(`My nickname is now \'${data}\'`);
+
+  await saveConfig();
+}
+
+async function barcode(message, data){
+  if (data == '') return;
+
+  let canvas = Canvas.createCanvas();
+  JsBarcode(canvas, data);
+
+  let attachment = new Discord.MessageAttachment(canvas.toBuffer(), 'barcode.png');
+
+  message.channel.send({ files: [attachment]});
+}
+
+async function hackPetrol(message, data){
+  let number = parseInt(data);
+  if (!isFinite(number)) number = 1;
+
+  if(number + CHROME_PAGES > MAX_CHROME_PAGES)
+  {
+    message.channel.send(`Tu much, i ll bust or sum shit, trenutno lahko odpres se ${MAX_CHROME_PAGES-CHROME_PAGES} hackBotov`);
+    return;
   }
-});
 
-client.on("messageCreate", async message => {
-  if (String(message.content).startsWith(GUILDS_DATA[message.guild.id].prefix + 'setPrefix')) {
+  // emoji
+  message.react('<:Profit:885976164412297226>');
 
-    let pref = String((message.content.split(' ')[1]) || "");
-    if (pref=='') return;
+  CHROME_PAGES += number;
 
-    message.guild.me.setNickname( GUILDS_DATA[message.guild.id].nickname + ` [${pref}]`);
+  let promises = [];
 
-    GUILDS_DATA[message.guild.id].prefix = pref;
-
-    message.channel.send(`New prefix is now \'${pref}\'`);
-
-    await saveConfig();
+  for (let i = 0; i < number; ++i) {
+    await delay(1200);
+    promises.push(genPetrolCode().then( async code => {
+      message.channel.send(code);
+      --CHROME_PAGES;
+    }));
   }
-});
 
-client.on("messageCreate", async message => {
-  if (String(message.content).startsWith(GUILDS_DATA[message.guild.id].prefix + 'setNickname')) {
+    await Promise.all(promises);
+}
 
-    let spaceIndex = message.content.indexOf(' ');
+async function purge(message, data){
+  if(message.reference)
+  {
+    let purgeId = message.reference.messageId;
+    let messages = await message.channel.messages.fetch({ after: purgeId });
 
-    if(spaceIndex == -1)
-      return;
+    messages.set(purgeId, await message.channel.messages.fetch(purgeId));
 
-    let nickname = String(message.content.substr(spaceIndex + 1).trim());
+    message.channel.bulkDelete(messages);
 
-    message.guild.me.setNickname( nickname + ` [${GUILDS_DATA[message.guild.id].prefix}]`);
+    message.channel.send(`Purged ${messages.size} messages`);
 
-    GUILDS_DATA[message.guild.id].nickname = nickname;
+  } 
+  else
+  {
+    let purgeCount = parseInt(data);
+    if(!purgeCount)purgeCount = 1;
+    else ++purgeCount;
+    if(purgeCount > 100)purgeCount=100;
 
-    message.channel.send(`My nickname is now \'${nickname}\'`);
+    let messages = await message.channel.messages.fetch({ limit: purgeCount });
 
-    await saveConfig();
-  }
-});
+    message.channel.bulkDelete(messages);
 
-client.on("messageCreate", async message => {
-  if (String(message.content).startsWith(GUILDS_DATA[message.guild.id].prefix + 'barcode')) {
-
-    let code = String((message.content.split(' ')[1]) || "");
-    if (code=='') return;
-
-    let canvas = Canvas.createCanvas();
-    //let ctx = canvas.getContext('2d');
-    JsBarcode(canvas, code);
-
-    let attachment = new Discord.MessageAttachment(canvas.toBuffer(), 'barcode.png');
-
-    message.channel.send({ files: [attachment]});
-  }
-});
-
-client.on("messageCreate", async message => {
-  if (String(message.content).startsWith(GUILDS_DATA[message.guild.id].prefix + 'hackPetrol')) {
-
-    // emoji
-    message.react('<:Profit:885976164412297226>');
-
-    let number = parseInt((message.content.split(' ')[1]) || "1");
-    if (!isFinite(number)) return;
-
-    if(number+CHROME_PAGES>MAX_CHROME_PAGES)
-    {
-      message.channel.send(`Tu much, i ll bust or sum shit, trenutno lahko odpres se ${MAX_CHROME_PAGES-CHROME_PAGES}`);
-      return;
-    }
-    CHROME_PAGES += number;
-
-    let promises = [];
-
-    for (let i = 0; i < number; ++i) {
-      await delay(1200);
-      promises.push(genPetrolCode().then( async code => {
-        message.channel.send(code);
-        --CHROME_PAGES;
-      }));
-    }
-
-     await Promise.all(promises);
+    message.channel.send(`Purged ${messages.size} messages`);
 
   }
-});
+}
 
 client.login(token); //token na kraju uvek mora da bude
