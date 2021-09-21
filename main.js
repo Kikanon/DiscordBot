@@ -3,6 +3,7 @@ const Puppeteer = require('puppeteer');
 const Canvas = require('canvas');
 const JsBarcode = require('jsbarcode');
 const Fs = require('fs');
+const Os = require('os');
 
 
 const MAX_CHROME_PAGES = 2;
@@ -62,6 +63,7 @@ async function saveConfig() {
 //-------------------- BOT READY --------------------
 client.on('ready', async () => {
   console.log('Bot ready');
+  console.log(`Running on ${Os.type}`);
 
   try {
     let rawdata = Fs.readFileSync('guilds_data.json');
