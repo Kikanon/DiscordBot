@@ -128,6 +128,8 @@ client.on("messageCreate", async message => {
     case "setPrefix": await setPrefix(message, data); break;
     case "setNickname": await setNickname(message, data); break;
     case "purge": await purge(message, data); break;
+    case "count": await count(message, data); break;
+    case "test": await test(message, data); break;
     default: return;
   }
 
@@ -143,7 +145,8 @@ async function help(message){
     \t${pref}barcode [code]\n \
     \t${pref}setPrefix [prefix]\n \
     \t${pref}setNickname [nickname]\n \
-    \t${pref}purge [num] {can also reply to provide purge point}`
+    \t${pref}purge [num] {can also reply to provide purge point}\n \
+    \t${pref}count [num]`
 
     message.channel.send(helpText);
 }
@@ -216,13 +219,30 @@ async function purge(message, data){
   if(message.reference)
   {
     let purgeId = message.reference.messageId;
+    let found = false;
+    let deleteCount = 0;
+
+    do {
+      let messages = await message.channel.messages.fetch({ limit: 50 });
+
+      if(messages.has(purgeId)){
+        found = true;
+      }
+      else{
+
+      deleteCount += messages.size;
+      await message.channel.bulkDelete(messages);
+      }
+    }while(!found);
+
     let messages = await message.channel.messages.fetch({ after: purgeId });
 
     messages.set(purgeId, await message.channel.messages.fetch(purgeId));
 
-    message.channel.bulkDelete(messages);
+    deleteCount += messages.size;
+    await message.channel.bulkDelete(messages);
 
-    message.channel.send(`Purged ${messages.size} messages`);
+    message.channel.send(`Purged ${deleteCount} messages`);
 
   } 
   else
@@ -239,6 +259,19 @@ async function purge(message, data){
     message.channel.send(`Purged ${messages.size} messages`);
 
   }
+}
+
+async function count(message, data){
+  let number = parseInt(data);
+  if(!number)number = 1;
+
+  for(let i=0;i < number; ++i)
+    message.channel.send(String(i+1));
+
+}
+
+async function test(message, data){
+  return;
 }
 
 client.login(token); //token na kraju uvek mora da bude
