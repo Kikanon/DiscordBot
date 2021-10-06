@@ -4,6 +4,7 @@ const Canvas = require('canvas');
 const JsBarcode = require('jsbarcode');
 const Fs = require('fs');
 const Os = require('os');
+const chromePath = require('get-chrome');
 
 const VERSION = 0.01;
 const MAX_CHROME_PAGES = 2;
@@ -26,7 +27,8 @@ const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
 process.setMaxListeners(100);
 
 async function genPetrolCode() {
-  const browser = (Os.type=="Linux")?await Puppeteer.launch({ headless: true, executablePath: "/usr/bin/chromium" }):await Puppeteer.launch({ headless: true });
+
+  const browser = (Os.type=="Linux")?await Puppeteer.launch({ headless: true, executablePath: chromePath() }):await Puppeteer.launch({ headless: true });
 
   const page = await browser.newPage();
   page.setDefaultTimeout(300000);
@@ -63,7 +65,7 @@ async function saveConfig() {
 
 //-------------------- BOT READY AND GUILD JOINS AND LEAVES--------------------
 client.on('ready', async () => {
-  console.log(`Running on ${Os.type}`);
+  console.log(`Running on ${Os.type()}`);
   console.log(`Debug: ${DEBUG}`);
   console.log(`Version: ${VERSION}`);
 
@@ -132,6 +134,9 @@ client.on("messageCreate", async message => {
     case "purge": await purge(message, data); break;
     case "count": await count(message, data); break;
     case "react": await react(message, data); break;
+    case "note": await note(message, data); break;
+    case "rmNote": await rmNote(message, data); break;
+    case "notes": await notes(message, data); break;
     case "test": await test(message, data); break;
     default: return;
   }
@@ -149,7 +154,9 @@ async function help(message){
     \t${pref}setPrefix [prefix]\n \
     \t${pref}setNickname [nickname]\n \
     \t${pref}purge [num] {can also reply to provide purge point}\n \
-    \t${pref}count [num]\n \
+    \t${pref}note [text]\n \
+    \t${pref}rmNote [num]\n \
+    \t${pref}notes [num]\n \
     \t${pref}react [message_id] [emoji name]`
 
     message.channel.send(helpText);
@@ -277,10 +284,6 @@ async function react(message, data){
   let message_id = data.split(" ")[0];
   let emoji_name = data.slice( data.indexOf(" ") + 1 ).replace(" ", "_");
 
-  // emoji ze lahko uporabi
-
-  //message.channel.send(`Message id: ${message_id}\nEmoji name: ${emoji_name}`);
-
   try{
     if( client.emojis.cache.find(emoji => emoji.name == emoji_name) ){
       let msg = await message.channel.messages.fetch(message_id);
@@ -295,10 +298,35 @@ async function react(message, data){
   
   await message.delete();
 
-  //console.log(client.emojis.cache);
-  //message.channel.send(`Emoji name: ${emoji_name}`); test
-
   return;
+}
+
+async function note(message, data){
+  if(data == '')return;
+
+  if(GUILDS_DATA[message.guild.id].notes == undefined){
+    GUILDS_DATA[message.guild.id].notes = {};
+    GUILDS_DATA[message.guild.id].notes[0] = data;
+  }
+  else {
+    GUILDS_DATA[message.guild.id].notes[Object.keys(GUILDS_DATA[message.guild.id].notes).length] = data;
+  }
+  
+  message.channel.send(`Note \`${data}\` added to notes`);
+ 
+  await saveConfig();
+
+}
+
+async function rmNote(message, data){}
+
+async function notes(message, data){
+  let Output = 'test';
+  Object.keys(GUILDS_DATA[message.guild.id].notes).forEach(element => {
+    Output += element * '\n';
+  });
+
+  message.channel.send(`\`\`\`${Output}\`\`\``);
 }
 
 client.login(token); //token na kraju uvek mora da bude

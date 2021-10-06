@@ -12,7 +12,14 @@
   "885964543598153758": {
     "prefix": "!",
     "nickname": "mr. bot",
-    "guild_name": "LawnMower2"
+    "guild_name": "LawnMower2",
+    "notes": {
+      "0": "prvi",
+      "1": "drugi",
+      "2": "tretji",
+      "3": "note",
+      "4": "zoinks"
+    }
   },
   "795719414859038770": {
     "prefix": ">",
