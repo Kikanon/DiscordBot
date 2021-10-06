@@ -5,6 +5,7 @@ const JsBarcode = require('jsbarcode');
 const Fs = require('fs');
 const Os = require('os');
 
+const VERSION = 0.01;
 const MAX_CHROME_PAGES = 2;
 const DEAFULT_NICKNAME = '';
 const DEAFULT_GUILD_DATA = {prefix:'>', nickname:'mr. bot', guild_name:''};
@@ -64,6 +65,7 @@ async function saveConfig() {
 client.on('ready', async () => {
   console.log(`Running on ${Os.type}`);
   console.log(`Debug: ${DEBUG}`);
+  console.log(`Version: ${VERSION}`);
 
   try {
     let rawdata = Fs.readFileSync('guilds_data.json');
@@ -156,7 +158,6 @@ async function help(message){
 async function setPrefix(message, data){
   if (data == '') return;
 
-  message.channel.send(`got data ${data}`);
   message.guild.me.setNickname( GUILDS_DATA[message.guild.id].nickname + ` [${data}]`);
 
   GUILDS_DATA[message.guild.id].prefix = data;
@@ -278,19 +279,21 @@ async function react(message, data){
 
   // emoji ze lahko uporabi
 
-  message.channel.send(`Message id: ${message_id}\nEmoji name: ${emoji_name}`);
+  //message.channel.send(`Message id: ${message_id}\nEmoji name: ${emoji_name}`);
 
-  if( client.emojis.cache.find(emoji => emoji.name == emoji_name) ){
-    if(message.reference)
-    {
-      let msg = await message.channel.messages.fetch(message.reference.messageId);
+  try{
+    if( client.emojis.cache.find(emoji => emoji.name == emoji_name) ){
+      let msg = await message.channel.messages.fetch(message_id);
       msg.react(client.emojis.cache.find(emoji => emoji.name == emoji_name).id);
-      await message.delete();
+    }
+    else {
+      message.channel.send("idk man, crack is hard to find");
     }
   }
-  else {
-    message.channel.send("idk man, crack is hard to find");
-  }
+  catch(e)
+  {}
+  
+  await message.delete();
 
   //console.log(client.emojis.cache);
   //message.channel.send(`Emoji name: ${emoji_name}`);
