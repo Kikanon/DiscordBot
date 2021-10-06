@@ -309,7 +309,8 @@ async function note(message, data){
     GUILDS_DATA[message.guild.id].notes[0] = data;
   }
   else {
-    GUILDS_DATA[message.guild.id].notes[Object.keys(GUILDS_DATA[message.guild.id].notes).length] = data;
+    let key = parseInt(Object.keys(GUILDS_DATA[message.guild.id].notes).at(-1))+1;
+    GUILDS_DATA[message.guild.id].notes[key] = data;
   }
   
   message.channel.send(`Note \`${data}\` added to notes`);
@@ -318,12 +319,19 @@ async function note(message, data){
 
 }
 
-async function rmNote(message, data){}
+async function rmNote(message, data){
+  if(data == '')return;
+
+  delete GUILDS_DATA[message.guild.id].notes[data];
+  
+
+  await saveConfig();
+}
 
 async function notes(message, data){
-  let Output = 'test';
-  Object.keys(GUILDS_DATA[message.guild.id].notes).forEach(element => {
-    Output += element * '\n';
+  let Output = '';
+  Object.keys(GUILDS_DATA[message.guild.id].notes).forEach(key => {
+    Output += `${key} ${GUILDS_DATA[message.guild.id].notes[key]}\n`
   });
 
   message.channel.send(`\`\`\`${Output}\`\`\``);
