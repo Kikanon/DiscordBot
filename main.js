@@ -129,6 +129,7 @@ client.on("messageCreate", async message => {
     case "setNickname": await setNickname(message, data); break;
     case "purge": await purge(message, data); break;
     case "count": await count(message, data); break;
+    case "react": await react(message, data); break;
     case "test": await test(message, data); break;
     default: return;
   }
@@ -146,7 +147,8 @@ async function help(message){
     \t${pref}setPrefix [prefix]\n \
     \t${pref}setNickname [nickname]\n \
     \t${pref}purge [num] {can also reply to provide purge point}\n \
-    \t${pref}count [num]`
+    \t${pref}count [num]\n \
+    \t${pref}react [message_id] [emoji name]`
 
     message.channel.send(helpText);
 }
@@ -270,7 +272,29 @@ async function count(message, data){
 
 }
 
-async function test(message, data){
+async function react(message, data){
+  let message_id = data.split(" ")[0];
+  let emoji_name = data.slice( data.indexOf(" ") + 1 ).replace(" ", "_");
+
+  // emoji ze lahko uporabi
+
+  message.channel.send(`Message id: ${message_id}\nEmoji name: ${emoji_name}`);
+
+  if( client.emojis.cache.find(emoji => emoji.name == emoji_name) ){
+    if(message.reference)
+    {
+      let msg = await message.channel.messages.fetch(message.reference.messageId);
+      msg.react(client.emojis.cache.find(emoji => emoji.name == emoji_name).id);
+      await message.delete();
+    }
+  }
+  else {
+    message.channel.send("idk man, crack is hard to find");
+  }
+
+  //console.log(client.emojis.cache);
+  //message.channel.send(`Emoji name: ${emoji_name}`);
+
   return;
 }
 
