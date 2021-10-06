@@ -296,7 +296,7 @@ async function react(message, data){
   await message.delete();
 
   //console.log(client.emojis.cache);
-  //message.channel.send(`Emoji name: ${emoji_name}`);
+  //message.channel.send(`Emoji name: ${emoji_name}`); test
 
   return;
 }
