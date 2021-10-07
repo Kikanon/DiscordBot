@@ -301,6 +301,7 @@ async function react(message, data){
   return;
 }
 
+// those 3 kinda lame
 async function note(message, data){
   if(data == '')return;
 
@@ -323,7 +324,6 @@ async function rmNote(message, data){
   if(data == '')return;
 
   delete GUILDS_DATA[message.guild.id].notes[data];
-  
 
   await saveConfig();
 }
