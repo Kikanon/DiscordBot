@@ -16,9 +16,7 @@ const DEBUG = true;
 let CHROME_PAGES = 0;
 let GUILDS_DATA = {};
 
-
-// test bout it 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
-const token = "MzY4NDIyNTU3ODgxMzM1ODEw.WeDePg.263kHD8VH8zxpc2EAl-88bNtRhI";
+const token = "discordApiToken";
 
 const client = new Discord.Client({ intents: ["GUILD_MESSAGES", "GUILDS", "DIRECT_MESSAGES", "GUILD_MESSAGE_REACTIONS", "DIRECT_MESSAGE_REACTIONS"] });
 
